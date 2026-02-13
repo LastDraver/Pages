@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Price Hunter</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial; margin: 16px; }
+    .row { display: flex; gap: 8px; }
+    input { flex: 1; padding: 12px; font-size: 16px; }
+    button { padding: 12px 14px; font-size: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .muted { color: #666; font-size: 13px; }
+    a { word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h2>Price Hunter</h2>
+  <div class="row">
+    <input id="q" placeholder="Search (e.g., LG OLED G5 65G53LS)" />
+    <button id="go">Search</button>
+  </div>
+  <div id="out" class="muted" style="margin-top:12px;">Results will appear here.</div>
+
+  <script>
+    const out = document.getElementById("out");
+    document.getElementById("go").onclick = async () => {
+      const q = document.getElementById("q").value.trim();
+      if (!q) return;
+      out.textContent = "Searching…";
+      const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const j = await r.json();
+      out.innerHTML = "";
+
+      const mk = (title, bodyHtml) => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerHTML = `<div><b>${title}</b></div>${bodyHtml}`;
+        out.appendChild(d);
+      };
+
+      mk("Cheapest offers (Pricy)", (j.pricy?.items || []).map(x =>
+        `<div>• <b>${x.priceRON ?? "?"} RON</b> — ${x.title ?? ""}<div class="muted"><a href="${x.link}" target="_blank">${x.link}</a></div></div>`
+      ).join("") || `<div class="muted">${j.pricy?.error || "No results"}</div>`);
+
+      mk("Latest related news/deals (Mobilissimo)", (j.mobilissimo?.items || []).map(x =>
+        `<div>• ${x.title ?? ""}<div class="muted"><a href="${x.link}" target="_blank">${x.link}</a> — ${x.pubDate ?? ""}</div></div>`
+      ).join("") || `<div class="muted">${j.mobilissimo?.error || "No items"}</div>`);
+
+      mk("Coupons", (j.coupons || []).map(c =>
+        `<div><b>${c.domain}</b>${(c.items||[]).map(i=>`<div>• ${i.code ? `<b>${i.code}</b>` : ""} ${i.title ?? ""} <span class="muted">${i.note ?? ""}</span></div>`).join("")}</div>`
+      ).join("") || `<div class="muted">No coupons found</div>`);
+
+      mk("Gemini summary", `<div>${(j.summary || "").replaceAll("\n","<br>")}</div>`);
+
+      if (j.debug) mk("Debug", `<pre class="muted">${JSON.stringify(j.debug,null,2)}</pre>`);
+    };
+  </script>
+</body>
+</html>
