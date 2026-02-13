@@ -28,7 +28,8 @@
       const q = document.getElementById("q").value.trim();
       if (!q) return;
       out.textContent = "Searching…";
-      const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const API_BASE = "https://project-price-hunter.savuandrei21.workers.dev";
+      const r = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}`);
       const j = await r.json();
       out.innerHTML = "";
 
